@@ -16,6 +16,14 @@ class UnoDBRecipe(ConanFile):
         "cmake/[>=3.20.0]",
     ]
 
+    options = {
+        "spinlock_loop": ["PAUSE", "EMPTY"]
+    }
+
+    default_options = {
+        "spinlock_loop": "PAUSE"
+    }
+
     settings = "os", "compiler", "build_type", "arch"
     exports_sources = "*.cpp", "*.hpp", "CMakeLists.txt"
 
@@ -33,6 +41,7 @@ class UnoDBRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.variables['TESTS'] = False
         tc.variables['STATS'] = False
+        tc.variables['SPINLOCK_LOOP'] = str(self.options.spinlock_loop)
         tc.generate()
 
     def build(self):
@@ -48,4 +57,8 @@ class UnoDBRecipe(ConanFile):
         copy(self, "*.dylib", dst=os.path.join(self.package_folder, "lib"), src=self.build_folder, keep_path=False)
 
     def package_info(self):
-        self.cpp_info.libs = ["unodb"]
+        self.cpp_info.libs = ["unodb_qsbr", "unodb"]
+        if self.options.spinlock_loop == "PAUSE":
+            self.cpp_info.defines.append("UNODB_SPINLOCK_LOOP_VALUE=1")
+        elif self.options.spinlock_loop == "EMPTY":
+            self.cpp_info.defines.append("UNODB_SPINLOCK_LOOP_VALUE=2")
